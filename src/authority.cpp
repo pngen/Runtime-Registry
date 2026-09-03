@@ -91,6 +91,16 @@ void Registry::revoke_boot_internal(WorkerBootId boot) {
       inst.freshness = Freshness::STALE;
       inst.reachability = Reachability::UNREACHABLE;
       inst.readiness = Readiness::NOT_READY;
+      // Release the endpoints of the dead incarnation so a fresh incarnation
+      // can claim them. The endpoint's liveness died with the process, but the
+      // logical endpoint identity may be re-established by a new boot.
+      for (EndpointId eid : inst.endpoints) {
+        auto eit = endpoints_.find(eid);
+        if (eit != endpoints_.end() && eit->second.service_instance == inst.instance_id) {
+          eit->second.service_instance = ServiceInstanceId{};
+          eit->second.reachability = Reachability::UNREACHABLE;
+        }
+      }
     }
   }
 }

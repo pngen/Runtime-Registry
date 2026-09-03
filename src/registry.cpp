@@ -287,8 +287,20 @@ ServiceInstanceId Registry::register_instance(const ServiceInstance& inst, const
   for (EndpointId eid : copy.endpoints) {
     auto eit = endpoints_.find(eid);
     if (eit == endpoints_.end()) throw RegistryError(ErrorKind::UNKNOWN_IDENTITY, "instance references unregistered endpoint");
-    if (eit->second.service_instance.value() == 0) eit->second.service_instance = copy.instance_id;
-    else if (eit->second.service_instance != copy.instance_id) { ++accounting_.duplicate_conflict_rejections; throw RegistryError(ErrorKind::DUPLICATE_CONFLICT, "endpoint already bound to another instance"); }
+    if (eit->second.service_instance.value() == 0) {
+      eit->second.service_instance = copy.instance_id;
+    } else if (eit->second.service_instance != copy.instance_id) {
+      // An inactive (superseded/stale/tombstoned/retired) instance may have its
+      // endpoint reclaimed by a fresh incarnation of the same service.
+      auto owner = instances_.find(eit->second.service_instance);
+      bool inactive = (owner == instances_.end() || owner->second.lifecycle == Lifecycle::SUPERSEDED ||
+                       owner->second.lifecycle == Lifecycle::STALE || owner->second.lifecycle == Lifecycle::TOMBSTONED ||
+                       owner->second.lifecycle == Lifecycle::RETIRED || owner->second.lifecycle == Lifecycle::INVALIDATED);
+      if (!inactive) { ++accounting_.duplicate_conflict_rejections; throw RegistryError(ErrorKind::DUPLICATE_CONFLICT, "endpoint already bound to another instance"); }
+      eit->second.service_instance = copy.instance_id;
+      eit->second.reachability = Reachability::REACHABLE;
+      eit->second.freshness = Freshness::CURRENT;
+    }
   }
   instances_[copy.instance_id] = copy;
   instance_history_.push_back(copy);

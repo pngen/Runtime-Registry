@@ -37,6 +37,7 @@ set(RUNTIMEREGISTRY_SOURCES
   src/lease.cpp
   src/persistence.cpp
   src/protocol.cpp
+  src/tcp.cpp
   src/authority.cpp
   src/explanation.cpp
   src/accounting.cpp
@@ -62,6 +63,13 @@ endif()
 if(RUNTIMEREGISTRY_BUILD_CLI)
   add_executable(runtime-registry apps/cli.cpp)
   target_link_libraries(runtime-registry PRIVATE RuntimeRegistry::runtimeregistry)
+endif()
+
+if(WIN32 AND RUNTIMEREGISTRY_ENABLE_SYNTHETIC_DISTRIBUTED)
+  add_executable(runtime-registry-coordinator apps/coordinator.cpp)
+  target_link_libraries(runtime-registry-coordinator PRIVATE RuntimeRegistry::runtimeregistry)
+  add_executable(runtime-registry-worker apps/worker.cpp)
+  target_link_libraries(runtime-registry-worker PRIVATE RuntimeRegistry::runtimeregistry)
 endif()
 
 if(RUNTIMEREGISTRY_BUILD_TESTS)
