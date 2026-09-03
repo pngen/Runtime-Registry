@@ -13,3 +13,9 @@ npp
 Debug/
 Release/
 local/
+# build artifacts
+*.exe
+*.obj
+*.lib
+*.pdb
+*.dll
