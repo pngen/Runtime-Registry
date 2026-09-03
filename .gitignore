@@ -1,0 +1,15 @@
+build/
+build-*/
+*.user
+*.VC.db
+.vs/
+cmake-build-*/
+npp
+*.png
+!*.png  # keep tracked images if committed
+.idea/
+*.suo
+*.sln
+Debug/
+Release/
+local/
